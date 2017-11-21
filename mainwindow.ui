@@ -20,44 +20,37 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <widget class="QLabel" name="img_label">
-    <property name="geometry">
-     <rect>
-      <x>150</x>
-      <y>0</y>
-      <width>191</width>
-      <height>131</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string/>
-    </property>
-    <property name="pixmap">
-     <pixmap>../../Images/abstractsdark8.jpg</pixmap>
-    </property>
-   </widget>
-   <widget class="QListView" name="clusters_listview">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>0</y>
-      <width>150</width>
-      <height>192</height>
-     </rect>
-    </property>
-    <property name="minimumSize">
-     <size>
-      <width>0</width>
-      <height>0</height>
-     </size>
-    </property>
-    <property name="maximumSize">
-     <size>
-      <width>16777215</width>
-      <height>16777215</height>
-     </size>
-    </property>
-   </widget>
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QListView" name="clusters_listview">
+      <property name="minimumSize">
+       <size>
+        <width>175</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>175</width>
+        <height>16777215</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="1">
+     <widget class="QLabel" name="img_label">
+      <property name="minimumSize">
+       <size>
+        <width>610</width>
+        <height>600</height>
+       </size>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -86,6 +79,7 @@
     <addaction name="action_Add_Cluster"/>
     <addaction name="actionRe_move_Cluster"/>
     <addaction name="actionU_pdate_image"/>
+    <addaction name="actionRestore_default_file"/>
    </widget>
    <widget class="QMenu" name="menu_View">
     <property name="title">
@@ -107,7 +101,7 @@
      <addaction name="actionZoom_out"/>
      <addaction name="actionNormal_Size"/>
     </widget>
-    <addaction name="actionResize_image_to_window_size"/>
+    <addaction name="actionImage_fits_window"/>
     <addaction name="menuRotate_image"/>
     <addaction name="menuZoom"/>
     <addaction name="actionAutoupdate"/>
@@ -203,18 +197,18 @@
   </action>
   <action name="actionU_pdate_image">
    <property name="text">
-    <string>Update</string>
+    <string>Update File</string>
    </property>
    <property name="shortcut">
     <string>F5</string>
    </property>
   </action>
-  <action name="actionResize_image_to_window_size">
+  <action name="actionImage_fits_window">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Image size fits window</string>
+    <string>Image fits window</string>
    </property>
   </action>
   <action name="actionRotate_90">
@@ -277,6 +271,11 @@
   <action name="actionApply">
    <property name="text">
     <string>Apply</string>
+   </property>
+  </action>
+  <action name="actionRestore_default_file">
+   <property name="text">
+    <string>Restore Default File</string>
    </property>
   </action>
  </widget>
