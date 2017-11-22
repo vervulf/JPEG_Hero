@@ -35,6 +35,7 @@ public:
 
 private:
     QString appPath, tmpPath, backupPath, tempFilePath;
+    QString file_types;
     Ui::MainWindow *ui;
     QPixmap *img;
     QString *imgPath;

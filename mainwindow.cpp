@@ -9,7 +9,8 @@ MainWindow::MainWindow(QWidget *parent) :
     scrollArea(new QScrollArea()),
     img_fits_wnd(true),
     img_autoupdate(false),
-    LISTVIEW_WIDTH(175)
+    LISTVIEW_WIDTH(175),
+    file_types(tr("JPEG File (*.jpg *.jpeg)"))
 {
     //QMessageBox::information(this, tr("Constructor"),tr("Constructor"));
     ui->setupUi(this);
@@ -31,6 +32,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->action_Open,SIGNAL(triggered(bool)),this,SLOT(get_img()));
     QObject::connect(ui->actionAutoupdate,SIGNAL(triggered(bool)),this,SLOT(autoupdate()));
     QObject::connect(ui->actionImage_fits_window,SIGNAL(triggered(bool)),this,SLOT(fit_size()));
+    QObject::connect(ui->action_Save,SIGNAL(triggered(bool)),this,SLOT(save_file()));
+    QObject::connect(ui->actionSave_file_as,SIGNAL(triggered(bool)),this,SLOT(save_file_as()));
 
 }
 
@@ -48,7 +51,6 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 
 void MainWindow::get_img()
 {
-    QString file_types = tr("JPEG File (*.jpg *.jpeg)");
     *imgPath = QFileDialog::getOpenFileName(this,tr("Open File"),
                                              *imgPath, file_types);
     if (*imgPath == NULL)
@@ -118,10 +120,20 @@ void MainWindow::wnd_resize()
 
 void MainWindow::save_file()
 {
-
+    QFile(*imgPath).remove();
+    QFile::copy(tempFilePath,*imgPath);
 }
 
 void MainWindow::save_file_as()
 {
+    QString savePath = QFileDialog::getSaveFileName(this,tr("Save File As"),
+                                                    *imgPath, file_types);
+
+    if (savePath == NULL)
+        return;
+
+    if (QFile(savePath).exists())
+        QFile(savePath).remove();
+    QFile::copy(tempFilePath,savePath);
 
 }
