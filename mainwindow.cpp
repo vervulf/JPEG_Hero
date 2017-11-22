@@ -5,7 +5,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     img(new QPixmap()),
-    img_path(new QString("C://")),
+    imgPath(new QString("/")),
     scrollArea(new QScrollArea()),
     img_fits_wnd(true),
     img_autoupdate(false),
@@ -36,7 +36,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-    delete ui,img,img_path,scrollArea;
+    delete ui,img,imgPath,scrollArea;
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
@@ -49,16 +49,16 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 void MainWindow::get_img()
 {
     QString file_types = tr("JPEG File (*.jpg *.jpeg)");
-    *img_path = QFileDialog::getOpenFileName(this,tr("Open File"),
-                                             *img_path, file_types);
-    if (*img_path == NULL)
+    *imgPath = QFileDialog::getOpenFileName(this,tr("Open File"),
+                                             *imgPath, file_types);
+    if (*imgPath == NULL)
     {
-        *img_path = "C://";
+        *imgPath = "C://";
         return;
     }
 
     delete img;
-    img = new QPixmap(*img_path);
+    img = new QPixmap(*imgPath);
     if (img_fits_wnd)
     {
         int w = ui->img_label->width(),
@@ -72,6 +72,25 @@ void MainWindow::get_img()
         ui->img_label->resize(w,h);
         ui->img_label->setPixmap(*img);
     }
+
+    tmpPath = appPath + "/tmp";
+
+    if (!QDir(tmpPath).exists())
+        QDir().mkdir(tmpPath);
+
+
+    tempFilePath = tmpPath + "/temp.jpg";
+    backupPath = tmpPath + "/backup.jpg";
+
+    if(QFile(tempFilePath).exists())
+        QFile(tempFilePath).remove();
+    if(QFile(backupPath).exists())
+        QFile(backupPath).remove();
+
+    bool result;
+    result = QFile::copy(*imgPath, tempFilePath);
+    result = QFile::copy(*imgPath, backupPath);
+
 }
 
 void MainWindow::fit_size()

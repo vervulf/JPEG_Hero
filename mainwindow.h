@@ -28,10 +28,16 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+    void get_app_path(QString path)
+    {
+        appPath = path;
+    }
+
 private:
+    QString appPath, tmpPath, backupPath, tempFilePath;
     Ui::MainWindow *ui;
     QPixmap *img;
-    QString *img_path;
+    QString *imgPath;
     QScrollArea *scrollArea;
     bool img_fits_wnd, img_autoupdate;
     int LISTVIEW_WIDTH;
@@ -47,6 +53,7 @@ private slots:
     void autoupdate();
     void wnd_resize();
     void save_file();
+    void save_file_as();
 
 signals:
     void wnd_resize_sig();
