@@ -1,19 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QLabel>
-#include <QPixmap>
-#include <QListView>
-#include <QDir>
-#include <QFile>
-#include <QFileDialog>
-#include <QString>
-#include <QScrollArea>
-#include <QRect>
-#include <QSize>
-#include <QDesktopWidget>
-#include <QMessageBox>
+#include "include_libs.h"
 
 
 namespace Ui {
@@ -39,25 +27,27 @@ private:
     Ui::MainWindow *ui;
     QPixmap *img;
     QString *imgPath;
-    QScrollArea *scrollArea;
+    QLabel *imgLabel;
     bool img_fits_wnd, img_autoupdate;
     int LISTVIEW_WIDTH;
-
-    //QLabel *img_label;
-    //QListView *clusters_lv;
-
-    bool eventFilter(QObject *watched, QEvent *event);
+    QList<QListWidgetItem*> *itemList;
 
 private slots:
-    void get_img();
+    void open_file();
     void fit_size();
     void autoupdate();
     void wnd_resize();
     void save_file();
     void save_file_as();
+    void update_view();
+    void update_file();
+    void resotre_file();
+    void cluster_clicked(QListWidgetItem *);
 
 signals:
-    void wnd_resize_sig();
+    void sig_update_file();
+    void sig_update_view();
+
 
 };
 
