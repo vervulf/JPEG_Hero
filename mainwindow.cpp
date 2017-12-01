@@ -13,11 +13,14 @@ MainWindow::MainWindow(QWidget *parent) :
     img_autoupdate(false),
     LISTVIEW_WIDTH(175),
     file_types(tr("JPEG File (*.jpg *.jpeg)")),
-    itemList(new QList<QListWidgetItem*>)
+    itemSet(new QSet<unsigned int>),
+    itemList(new QList<QListWidgetItem*>),
+    fileClusters(-1)
 {
     //QMessageBox::information(this, tr("Constructor"),tr("Constructor"));
     ui->setupUi(this);
     setWindowTitle("JPEG Hero");
+    ui->statusBar->showMessage("No File Opened");
     ui->actionAutoupdate->setChecked(img_autoupdate);
     ui->actionImage_fits_window->setChecked(img_fits_wnd);
     ui->scrollArea->setWidget(imgLabel);
@@ -33,8 +36,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->clusters_listview->setGeometry(0,0,clustW,clustH);
     imgLabel->setGeometry(LISTVIEW_WIDTH,0,imgW,imgH);
 
-    itemList->append(new QListWidgetItem("0", ui->clusters_listview));
-
     QObject::connect(ui->actionAutoupdate,SIGNAL(triggered(bool)),this,SLOT(autoupdate()));
     QObject::connect(ui->actionImage_fits_window,SIGNAL(triggered(bool)),this,SLOT(fit_size()));
     QObject::connect(ui->action_Open,SIGNAL(triggered(bool)),this,SLOT(open_file()));
@@ -45,6 +46,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->clusters_listview,SIGNAL(itemClicked(QListWidgetItem*)),this,SLOT(cluster_clicked(QListWidgetItem*)));
     QObject::connect(this,SIGNAL(sig_update_file()),this,SLOT(update_file()));
     QObject::connect(this,SIGNAL(sig_update_view()),this,SLOT(update_view()));
+    QObject::connect(ui->action_Add_Cluster, SIGNAL(triggered(bool)), this, SLOT(add_cluster()));
+    QObject::connect(ui->actionRe_move_Cluster,SIGNAL(triggered(bool)),this,SLOT(remove_cluster()));
 
 }
 
@@ -56,6 +59,17 @@ MainWindow::~MainWindow()
         QFile(backupPath).remove();
 
     delete ui,img,imgPath,imgLabel;
+}
+
+int MainWindow::countClusters()
+{
+    QFile file(tempFilePath);
+    fileClusters = file.size()/4096;
+    if (file.size()%4096!=0)
+        fileClusters++;
+    ui->statusBar->showMessage(QString::number(fileClusters) + " clusters in file");
+
+    return fileClusters;
 }
 
 
@@ -102,7 +116,7 @@ void MainWindow::open_file()
     bool result;
     result = QFile::copy(*imgPath, tempFilePath);
     result = QFile::copy(*imgPath, backupPath);
-
+    this->countClusters();
 }
 
 void MainWindow::fit_size()
@@ -228,4 +242,76 @@ void MainWindow::cluster_clicked(QListWidgetItem *item)
 
     }
 
+}
+
+void MainWindow::add_cluster()
+{
+ ClusterDlg *dlg = new ClusterDlg();
+ dlg->show();
+
+ QObject::connect(dlg,SIGNAL(send_string(QString&)),this,SLOT(add_to_list(QString&)));
+}
+
+void MainWindow::remove_cluster()
+{
+    ClusterDlg *dlg = new ClusterDlg();
+    dlg->show();
+
+    QObject::connect(dlg,SIGNAL(send_string(QString&)),this,SLOT(remove_from_list(QString&)));
+}
+
+void MainWindow::remove_from_list(QString &str)
+{
+    if (str.isEmpty() || abs(str.toInt()) > fileClusters)
+        return;
+
+    ui->clusters_listview->clear();
+    for(auto itr=itemList->begin(); itr != itemList->end(); ++itr)
+    {
+        delete (&itr);
+    }
+    itemList->clear();
+
+    itemSet->remove(abs(str.toInt()));
+    QList<int> numbers;
+    for(auto itr=itemSet->begin(); itr!=itemSet->end(); ++itr)
+    {
+        numbers.push_back(*itr);
+    }
+    qSort(numbers.begin(),numbers.end());
+
+    for(auto itr=numbers.begin(); itr!=numbers.end(); ++itr)
+    {
+     QListWidgetItem *item = new QListWidgetItem(QString::number(*itr),ui->clusters_listview);
+     item->setCheckState(Qt::Checked);
+     itemList->append(item);
+    }
+}
+
+void MainWindow::add_to_list(QString &str)
+{
+    if (str.isEmpty() || abs(str.toInt()) > fileClusters)
+        return;
+
+    ui->clusters_listview->clear();
+    for(auto itr=itemList->begin(); itr != itemList->end(); ++itr)
+    {
+        delete (&itr);
+    }
+    itemList->clear();
+
+    itemSet->insert(abs(str.toInt()));
+    QList<int> numbers;
+    for(auto itr=itemSet->begin(); itr!=itemSet->end(); ++itr)
+    {
+        numbers.push_back(*itr);
+    }
+    qSort(numbers.begin(),numbers.end());
+
+    for(auto itr=numbers.begin(); itr!=numbers.end(); ++itr)
+    {
+     QListWidgetItem *item = new QListWidgetItem(QString::number(*itr),ui->clusters_listview);
+     item->setCheckState(Qt::Checked);
+     itemList->append(item);
+    }
 }

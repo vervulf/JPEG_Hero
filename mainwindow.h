@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "include_libs.h"
+#include "clusterdlg.h"
 
 
 namespace Ui {
@@ -30,7 +31,12 @@ private:
     QLabel *imgLabel;
     bool img_fits_wnd, img_autoupdate;
     int LISTVIEW_WIDTH;
-    QList<QListWidgetItem*> *itemList;
+    QSet<unsigned int> *itemSet;
+    QList<QListWidgetItem*> * itemList;
+    int fileClusters;
+
+    int countClusters();
+
 
 private slots:
     void open_file();
@@ -43,6 +49,11 @@ private slots:
     void update_file();
     void resotre_file();
     void cluster_clicked(QListWidgetItem *);
+    void add_cluster();
+    void remove_cluster();
+    void add_to_list(QString&);
+    void remove_from_list(QString&);
+
 
 signals:
     void sig_update_file();

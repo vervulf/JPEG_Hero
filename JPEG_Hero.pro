@@ -13,9 +13,12 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    clusterdlg.cpp
 
 HEADERS  += mainwindow.h \
-    include_libs.h
+    include_libs.h \
+    clusterdlg.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    clusterdlg.ui

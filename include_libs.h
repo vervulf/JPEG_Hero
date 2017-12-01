@@ -17,5 +17,8 @@
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QList>
+#include <QQueue>
+#include <QSet>
+#include <QStatusBar>
 
 #endif // INCLUDE_H
