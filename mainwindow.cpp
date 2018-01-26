@@ -2,7 +2,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -63,11 +62,31 @@ MainWindow::~MainWindow()
 
 int MainWindow::countClusters()
 {
+    int CLUSTER_SIZE = 4096;
     QFile file(tempFilePath);
-    fileClusters = file.size()/4096;
-    if (file.size()%4096!=0)
+    int fSize = file.size();
+    fileClusters = file.size()/CLUSTER_SIZE;
+    if (file.size()%CLUSTER_SIZE!=0)
         fileClusters++;
     ui->statusBar->showMessage(QString::number(fileClusters) + " clusters in file");
+
+    if (!file.open(QIODevice::ReadOnly))
+    {
+        ui->statusBar->showMessage("Failed to load file.");
+        return -1;
+    }
+
+//    if(clusters_list != nullptr)
+//        delete clusters_list;
+    clusters_list = new QList<QByteArray>;
+
+        while (!file.atEnd())
+        {
+            QByteArray cluster = file.read(CLUSTER_SIZE);
+            clusters_list->push_back(cluster);
+        }
+
+    file.close();
 
     return fileClusters;
 }
@@ -199,28 +218,32 @@ void MainWindow::update_view()
 
 void MainWindow::update_file()
 {
+    if(QFile(tempFilePath).exists())
+        QFile(tempFilePath).remove();
+
+    QFile file(tempFilePath);
+
+    if (!file.open(QIODevice::WriteOnly))
+        return;
+    for(int i=0; i<clusters_list->size(); ++i)
+    {
+        file.write(clusters_list->at(i));
+    }
+
+    file.close();
 
     emit sig_update_view();
 }
 
 void MainWindow::resotre_file()
 {
-    delete img;
-    img = new QPixmap(backupPath);
 
-    if (img_fits_wnd)
-    {
-        int w = ui->scrollArea->width(),
-            h = ui->scrollArea->height();
-        imgLabel->setPixmap(img->scaled(w,h,Qt::KeepAspectRatio));
-    }
-    else
-    {
-        int w = img->width(),
-            h = img->height();
-        imgLabel->resize(w,h);
-        imgLabel->setPixmap(*img);
-    }
+    bool result;
+    if(QFile(tempFilePath).exists())
+        QFile(tempFilePath).remove();
+
+    result = QFile::copy(backupPath, tempFilePath);
+    emit this->update_view();
 
 }
 
@@ -236,10 +259,6 @@ void MainWindow::cluster_clicked(QListWidgetItem *item)
     if (img_autoupdate)
     {
         emit sig_update_file();
-    }
-    else
-    {
-
     }
 
 }
@@ -265,12 +284,10 @@ void MainWindow::remove_from_list(QString &str)
     if (str.isEmpty() || abs(str.toInt()) > fileClusters)
         return;
 
-    ui->clusters_listview->clear();
-    for(auto itr=itemList->begin(); itr != itemList->end(); ++itr)
-    {
-        delete (&itr);
-    }
+    qDeleteAll(itemList->begin(),itemList->end());
+
     itemList->clear();
+    ui->clusters_listview->clear();
 
     itemSet->remove(abs(str.toInt()));
     QList<int> numbers;
@@ -286,6 +303,8 @@ void MainWindow::remove_from_list(QString &str)
      item->setCheckState(Qt::Checked);
      itemList->append(item);
     }
+
+    //emit this->update_file();
 }
 
 void MainWindow::add_to_list(QString &str)
@@ -293,12 +312,10 @@ void MainWindow::add_to_list(QString &str)
     if (str.isEmpty() || abs(str.toInt()) > fileClusters)
         return;
 
-    ui->clusters_listview->clear();
-    for(auto itr=itemList->begin(); itr != itemList->end(); ++itr)
-    {
-        delete (&itr);
-    }
+    qDeleteAll(itemList->begin(),itemList->end());
+
     itemList->clear();
+    ui->clusters_listview->clear();
 
     itemSet->insert(abs(str.toInt()));
     QList<int> numbers;
@@ -314,4 +331,6 @@ void MainWindow::add_to_list(QString &str)
      item->setCheckState(Qt::Checked);
      itemList->append(item);
     }
+
+    //emit this->update_file();
 }

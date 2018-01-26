@@ -20,5 +20,7 @@
 #include <QQueue>
 #include <QSet>
 #include <QStatusBar>
+#include <QByteArray>
+#include <QByteArrayList>
 
 #endif // INCLUDE_H

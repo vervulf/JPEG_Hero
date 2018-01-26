@@ -32,8 +32,9 @@ private:
     bool img_fits_wnd, img_autoupdate;
     int LISTVIEW_WIDTH;
     QSet<unsigned int> *itemSet;
-    QList<QListWidgetItem*> * itemList;
+    QList<QListWidgetItem*> *itemList;
     int fileClusters;
+    QList<QByteArray> *clusters_list;
 
     int countClusters();
 
