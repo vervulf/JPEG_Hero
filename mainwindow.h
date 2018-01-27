@@ -31,7 +31,7 @@ private:
     QLabel *imgLabel;
     bool img_fits_wnd, img_autoupdate;
     int LISTVIEW_WIDTH;
-    QSet<unsigned int> *itemSet;
+    QSet<unsigned int> *itemSet, *delClusters;
     QList<QListWidgetItem*> *itemList;
     int fileClusters;
     QList<QByteArray> *clusters_list;

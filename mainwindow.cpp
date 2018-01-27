@@ -13,6 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
     LISTVIEW_WIDTH(175),
     file_types(tr("JPEG File (*.jpg *.jpeg)")),
     itemSet(new QSet<unsigned int>),
+    delClusters(new QSet<unsigned int>),
     itemList(new QList<QListWidgetItem*>),
     fileClusters(-1)
 {
@@ -225,9 +226,10 @@ void MainWindow::update_file()
 
     if (!file.open(QIODevice::WriteOnly))
         return;
+
     for(int i=0; i<clusters_list->size(); ++i)
-    {
-        file.write(clusters_list->at(i));
+    {   if(!delClusters->contains(i))
+            file.write(clusters_list->at(i));
     }
 
     file.close();
@@ -252,8 +254,12 @@ void MainWindow::cluster_clicked(QListWidgetItem *item)
     Qt::CheckState state = item->checkState();
     switch(state)
     {
-    case Qt::Checked: item->setCheckState(Qt::Unchecked); break;
-    case Qt::Unchecked: item->setCheckState(Qt::Checked); break;
+    case Qt::Checked: item->setCheckState(Qt::Unchecked);
+        delClusters->insert(abs(item->text().toInt()));
+        break;
+    case Qt::Unchecked: item->setCheckState(Qt::Checked);
+        delClusters->remove(abs(item->text().toInt()));
+        break;
     }
 
     if (img_autoupdate)
@@ -300,7 +306,10 @@ void MainWindow::remove_from_list(QString &str)
     for(auto itr=numbers.begin(); itr!=numbers.end(); ++itr)
     {
      QListWidgetItem *item = new QListWidgetItem(QString::number(*itr),ui->clusters_listview);
-     item->setCheckState(Qt::Checked);
+     if(!delClusters->contains(*itr))
+        item->setCheckState(Qt::Checked);
+     else
+        item->setCheckState(Qt::Unchecked);
      itemList->append(item);
     }
 
@@ -328,7 +337,10 @@ void MainWindow::add_to_list(QString &str)
     for(auto itr=numbers.begin(); itr!=numbers.end(); ++itr)
     {
      QListWidgetItem *item = new QListWidgetItem(QString::number(*itr),ui->clusters_listview);
-     item->setCheckState(Qt::Checked);
+     if(!delClusters->contains(*itr))
+        item->setCheckState(Qt::Checked);
+     else
+        item->setCheckState(Qt::Unchecked);
      itemList->append(item);
     }
 
