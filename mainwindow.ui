@@ -47,8 +47,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>607</width>
-         <height>537</height>
+         <width>594</width>
+         <height>511</height>
         </rect>
        </property>
       </widget>
@@ -62,7 +62,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>17</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -78,8 +78,6 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
-    <addaction name="action_Undo"/>
-    <addaction name="action_Redo"/>
     <addaction name="action_Add_Cluster"/>
     <addaction name="actionRe_move_Cluster"/>
     <addaction name="actionUpdate_image"/>
@@ -89,16 +87,7 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
-    <widget class="QMenu" name="menuZoom">
-     <property name="title">
-      <string>Zoom</string>
-     </property>
-     <addaction name="actionZoom_in"/>
-     <addaction name="actionZoom_out"/>
-     <addaction name="actionNormal_Size"/>
-    </widget>
     <addaction name="actionImage_fits_window"/>
-    <addaction name="menuZoom"/>
     <addaction name="actionAutoupdate"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
@@ -128,7 +117,11 @@
     <bool>false</bool>
    </attribute>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="mouseTracking">
+    <bool>false</bool>
+   </property>
+  </widget>
   <action name="action_Open">
    <property name="text">
     <string>Open</string>

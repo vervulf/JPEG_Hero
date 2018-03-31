@@ -22,5 +22,6 @@
 #include <QStatusBar>
 #include <QByteArray>
 #include <QByteArrayList>
+#include <QRegExp>
 
 #endif // INCLUDE_H

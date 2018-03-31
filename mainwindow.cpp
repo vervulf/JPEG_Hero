@@ -15,12 +15,13 @@ MainWindow::MainWindow(QWidget *parent) :
     itemSet(new QSet<unsigned int>),
     delClusters(new QSet<unsigned int>),
     itemList(new QList<QListWidgetItem*>),
-    fileClusters(-1)
+    fileClusters(-1),
+    status_lbl(new QLabel())
 {
-    //QMessageBox::information(this, tr("Constructor"),tr("Constructor"));
     ui->setupUi(this);
     setWindowTitle("JPEG Hero");
-    ui->statusBar->showMessage("No File Opened");
+    ui->statusBar->addWidget(status_lbl);
+    status_lbl->setText("No File Opened");
     ui->actionAutoupdate->setChecked(img_autoupdate);
     ui->actionImage_fits_window->setChecked(img_fits_wnd);
     ui->scrollArea->setWidget(imgLabel);
@@ -69,16 +70,13 @@ int MainWindow::countClusters()
     fileClusters = file.size()/CLUSTER_SIZE;
     if (file.size()%CLUSTER_SIZE!=0)
         fileClusters++;
-    ui->statusBar->showMessage(QString::number(fileClusters) + " clusters in file");
-
+    status_lbl->setText(QString::number(fileClusters) + " clusters in file");
     if (!file.open(QIODevice::ReadOnly))
     {
         ui->statusBar->showMessage("Failed to load file.");
         return -1;
     }
 
-//    if(clusters_list != nullptr)
-//        delete clusters_list;
     clusters_list = new QList<QByteArray>;
 
         while (!file.atEnd())
@@ -90,6 +88,48 @@ int MainWindow::countClusters()
     file.close();
 
     return fileClusters;
+}
+
+QList<unsigned int> MainWindow::parse_clusters_str(QString str)
+{
+    QStringList strList = str.split(',');
+    QList<unsigned int> clusters;
+    QRegExp re("\\d*");
+    foreach (QString substr, strList) {
+       bool valid_num = true;
+       if(substr.contains(':'))
+       {
+           QStringList clusters_range = substr.split(':');
+           foreach (QString num, clusters_range) {
+              if(!re.exactMatch(num) || num == "")
+                  valid_num = false;
+           }
+           if(!valid_num)
+               continue;
+
+           int first , last;
+           if(clusters_range[0].toInt() < clusters_range[1].toInt())
+           {
+               first = clusters_range[0].toInt();
+               last = clusters_range[1].toInt();
+           }
+           else
+           {
+               first = clusters_range[1].toInt();
+               last = clusters_range[0].toInt();
+           }
+           for(int i = first; i<= last; ++i)
+               clusters.append(i);
+       }
+       else
+           if(!re.exactMatch(substr) || substr == "")
+               valid_num = false;
+           if(!valid_num)
+               continue;
+           clusters.append(substr.toInt());
+    }
+
+    return clusters;
 }
 
 
@@ -239,12 +279,16 @@ void MainWindow::update_file()
 
 void MainWindow::resotre_file()
 {
-
     bool result;
     if(QFile(tempFilePath).exists())
         QFile(tempFilePath).remove();
 
     result = QFile::copy(backupPath, tempFilePath);
+    qDeleteAll(itemList->begin(),itemList->end());
+    delClusters->clear();
+    itemSet->clear();
+    itemList->clear();
+    ui->clusters_listview->clear();
     emit this->update_view();
 
 }
@@ -291,11 +335,24 @@ void MainWindow::remove_from_list(QString &str)
         return;
 
     qDeleteAll(itemList->begin(),itemList->end());
-
     itemList->clear();
     ui->clusters_listview->clear();
 
-    itemSet->remove(abs(str.toInt()));
+    QList<unsigned int> clusters;
+    if(str == "*")
+    {
+        for(int i=0; i <= fileClusters; ++i)
+            clusters.append(i);
+    }
+    else
+    {
+        clusters= parse_clusters_str(str);
+    }
+
+    foreach (int num, clusters) {
+        itemSet->remove(abs(num));
+    }
+
     QList<int> numbers;
     for(auto itr=itemSet->begin(); itr!=itemSet->end(); ++itr)
     {
@@ -313,7 +370,6 @@ void MainWindow::remove_from_list(QString &str)
      itemList->append(item);
     }
 
-    //emit this->update_file();
 }
 
 void MainWindow::add_to_list(QString &str)
@@ -326,7 +382,21 @@ void MainWindow::add_to_list(QString &str)
     itemList->clear();
     ui->clusters_listview->clear();
 
-    itemSet->insert(abs(str.toInt()));
+    QList<unsigned int> clusters;
+    if(str == "*")
+    {
+        for(int i=0; i <= fileClusters; ++i)
+            clusters.append(i);
+    }
+    else
+    {
+        clusters= parse_clusters_str(str);
+    }
+
+    foreach (int num, clusters) {
+        itemSet->insert(abs(num));
+    }
+
     QList<int> numbers;
     for(auto itr=itemSet->begin(); itr!=itemSet->end(); ++itr)
     {
@@ -344,5 +414,4 @@ void MainWindow::add_to_list(QString &str)
      itemList->append(item);
     }
 
-    //emit this->update_file();
 }

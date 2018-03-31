@@ -23,20 +23,27 @@ public:
     }
 
 private:
-    QString appPath, tmpPath, backupPath, tempFilePath;
+    QString appPath,
+            tmpPath,
+            backupPath,
+            tempFilePath;
     QString file_types;
     Ui::MainWindow *ui;
     QPixmap *img;
-    QString *imgPath;
-    QLabel *imgLabel;
-    bool img_fits_wnd, img_autoupdate;
+    QString *imgPath; //current img path
+    QLabel *imgLabel; //ImgView
+    bool img_fits_wnd,
+         img_autoupdate;
     int LISTVIEW_WIDTH;
-    QSet<unsigned int> *itemSet, *delClusters;
-    QList<QListWidgetItem*> *itemList;
-    int fileClusters;
-    QList<QByteArray> *clusters_list;
+    QLabel *status_lbl;
+    QSet<unsigned int>  *itemSet,
+                        *delClusters; // numbers of cluster to remove (disable)
+    QList<QListWidgetItem*> *itemList; // checkboxes in ListView
+    int fileClusters; //total clusters ammount
+    QList<QByteArray> *clusters_list; //clusters list with CLUSTER_SIZE bytes element size
 
-    int countClusters();
+    int countClusters();    
+    QList<unsigned int> parse_clusters_str(QString str);
 
 
 private slots:
