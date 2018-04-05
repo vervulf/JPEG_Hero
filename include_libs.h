@@ -23,5 +23,7 @@
 #include <QByteArray>
 #include <QByteArrayList>
 #include <QRegExp>
+#include <QImageReader>
+#include <QImage>
 
 #endif // INCLUDE_H

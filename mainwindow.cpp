@@ -144,6 +144,13 @@ void MainWindow::open_file()
     }
 
     delete img;
+    qDeleteAll(itemList->begin(),itemList->end());
+    delClusters->clear();
+    itemSet->clear();
+    itemList->clear();
+    ui->clusters_listview->clear();
+//    //QImageReader img_rdr();
+//    *img = QPixmap::fromImage(QImage(*imgPath));
     img = new QPixmap(*imgPath);
     if (img_fits_wnd)
     {
