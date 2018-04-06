@@ -5,37 +5,25 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    img(new QPixmap()),
     imgPath(new QString("/")),
-    imgLabel(new QLabel()),
-    img_fits_wnd(true),
-    img_autoupdate(false),
+    img_autoupdate(true),
     LISTVIEW_WIDTH(175),
     file_types(tr("JPEG File (*.jpg *.jpeg)")),
     itemSet(new QSet<unsigned int>),
     delClusters(new QSet<unsigned int>),
     itemList(new QList<QListWidgetItem*>),
     fileClusters(-1),
-    status_lbl(new QLabel())
+    status_lbl(new QLabel()),
+    program("rundll32.exe C:\\WINDOWS\\System32\\shimgvw.dll,ImageView_Fullscreen ")
 {
     ui->setupUi(this);
     setWindowTitle("JPEG Hero");
     ui->statusBar->addWidget(status_lbl);
     status_lbl->setText("No File Opened");
     ui->actionAutoupdate->setChecked(img_autoupdate);
-    ui->actionImage_fits_window->setChecked(img_fits_wnd);
-    ui->scrollArea->setWidget(imgLabel);
 
-    QSize *wndSize = new QSize();
-    *wndSize = this->size();
-
-    int imgW = wndSize->width()-LISTVIEW_WIDTH,
-        imgH = wndSize->height()-77, // 77 = bottom status bar height
-        clustW = LISTVIEW_WIDTH,
-        clustH = wndSize->height()-77;
-
-    ui->clusters_listview->setGeometry(0,0,clustW,clustH);
-    imgLabel->setGeometry(LISTVIEW_WIDTH,0,imgW,imgH);
+    native_viewer = new QProcess(this);
+    getWnd = new QProcess(this);
 
     QObject::connect(ui->actionAutoupdate,SIGNAL(triggered(bool)),this,SLOT(autoupdate()));
     QObject::connect(ui->actionImage_fits_window,SIGNAL(triggered(bool)),this,SLOT(fit_size()));
@@ -49,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(this,SIGNAL(sig_update_view()),this,SLOT(update_view()));
     QObject::connect(ui->action_Add_Cluster, SIGNAL(triggered(bool)), this, SLOT(add_cluster()));
     QObject::connect(ui->actionRe_move_Cluster,SIGNAL(triggered(bool)),this,SLOT(remove_cluster()));
+    QObject::connect(getWnd,SIGNAL(finished(int)),this,SLOT(update_view(int)));
 
 }
 
@@ -59,7 +48,7 @@ MainWindow::~MainWindow()
     if(QFile(backupPath).exists())
         QFile(backupPath).remove();
 
-    delete ui,img,imgPath,imgLabel;
+    delete ui,imgPath,imgView;
 }
 
 int MainWindow::countClusters()
@@ -143,28 +132,13 @@ void MainWindow::open_file()
         return;
     }
 
-    delete img;
     qDeleteAll(itemList->begin(),itemList->end());
     delClusters->clear();
     itemSet->clear();
     itemList->clear();
     ui->clusters_listview->clear();
 //    //QImageReader img_rdr();
-//    *img = QPixmap::fromImage(QImage(*imgPath));
-    img = new QPixmap(*imgPath);
-    if (img_fits_wnd)
-    {
-        int w = ui->scrollArea->width(),
-            h = ui->scrollArea->height();
-        imgLabel->setPixmap(img->scaled(w,h,Qt::KeepAspectRatio));
-    }
-    else
-    {
-        int w = img->width(),
-            h = img->height();
-        imgLabel->resize(w,h);
-        imgLabel->setPixmap(*img);
-    }
+//    *img = QPixmap::fromImage(QImage(*imgPath));    
 
     tmpPath = appPath + "/tmp";
 
@@ -184,43 +158,16 @@ void MainWindow::open_file()
     result = QFile::copy(*imgPath, tempFilePath);
     result = QFile::copy(*imgPath, backupPath);
     this->countClusters();
-}
 
-void MainWindow::fit_size()
-{
-    img_fits_wnd = ui->actionImage_fits_window->isChecked();
-
-    if (img_fits_wnd)
-    {
-        int w = ui->scrollArea->width(),
-            h = ui->scrollArea->height();
-        imgLabel->setPixmap(img->scaled(w,h,Qt::KeepAspectRatio));
-    }
-    else
-    {
-        int w = img->width(),
-            h = img->height();
-        imgLabel->resize(w,h);
-        imgLabel->setPixmap(*img);
-    }
+    QString winPath = (tempFilePath).replace('/','\\');
+    native_viewer->close();
+    native_viewer->start(program + " " + winPath);
+    getWnd->start("getWnd.exe");
 }
 
 void MainWindow::autoupdate()
 {
     img_autoupdate = ui->actionAutoupdate->isChecked();
-}
-
-void MainWindow::wnd_resize()
-{
-    QSize *wndSize = new QSize();
-    *wndSize = this->size();
-
-    int imgW = wndSize->width()-LISTVIEW_WIDTH,
-        imgH = wndSize->height()-77, // 77 = bottom status bar height
-        clustW = LISTVIEW_WIDTH,
-        clustH = wndSize->height()-77;
-
-    imgLabel->setGeometry(LISTVIEW_WIDTH,0,imgW,imgH);
 }
 
 void MainWindow::save_file()
@@ -243,25 +190,29 @@ void MainWindow::save_file_as()
 
 }
 
-void MainWindow::update_view()
+void MainWindow::update_view(int exitStatus)
 {
+    if(exitStatus>0)
+        return;
 
-    delete img;
-    img = new QPixmap(tempFilePath);
+    long wndId;
+    QFile inputFile("viewer.wnd");
+    if (inputFile.open(QIODevice::ReadOnly))
+    {
+       QTextStream in(&inputFile);
+       while (!in.atEnd())
+       {
+          QString line = in.readLine();
+          line.remove(0,2);
+          wndId = line.toInt(nullptr,16);
+       }
+       inputFile.close();
+    }
 
-    if (img_fits_wnd)
-    {
-        int w = ui->scrollArea->width(),
-            h = ui->scrollArea->height();
-        imgLabel->setPixmap(img->scaled(w,h,Qt::KeepAspectRatio));
-    }
-    else
-    {
-        int w = img->width(),
-            h = img->height();
-        imgLabel->resize(w,h);
-        imgLabel->setPixmap(*img);
-    }
+    nativeWindow = QWindow::fromWinId(wndId);
+    nativeWindow->setFlags(Qt::FramelessWindowHint);
+    imgView = QWidget::createWindowContainer(nativeWindow,this);
+    ui->scrollArea->setWidget(imgView);
 }
 
 void MainWindow::update_file()
@@ -281,7 +232,10 @@ void MainWindow::update_file()
 
     file.close();
 
-    emit sig_update_view();
+    QString winPath = (tempFilePath).replace('/','\\');
+    //native_viewer->close();
+    native_viewer->start(program + " " + winPath);
+    //getWnd->start("getWnd.exe");
 }
 
 void MainWindow::resotre_file()
@@ -296,7 +250,11 @@ void MainWindow::resotre_file()
     itemSet->clear();
     itemList->clear();
     ui->clusters_listview->clear();
-    emit this->update_view();
+
+    QString winPath = (tempFilePath).replace('/','\\');
+    //native_viewer->close();
+    native_viewer->start(program + " " + winPath);
+    //getWnd->start("getWnd.exe");
 
 }
 

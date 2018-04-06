@@ -87,7 +87,6 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
-    <addaction name="actionImage_fits_window"/>
     <addaction name="actionAutoupdate"/>
    </widget>
    <widget class="QMenu" name="menu_Help">

@@ -29,11 +29,9 @@ private:
             tempFilePath;
     QString file_types;
     Ui::MainWindow *ui;
-    QPixmap *img;
     QString *imgPath; //current img path
-    QLabel *imgLabel; //ImgView
-    bool img_fits_wnd,
-         img_autoupdate;
+    QWidget *imgView; //ImgView
+    bool img_autoupdate;
     int LISTVIEW_WIDTH;
     QLabel *status_lbl;
     QSet<unsigned int>  *itemSet,
@@ -41,6 +39,11 @@ private:
     QList<QListWidgetItem*> *itemList; // checkboxes in ListView
     int fileClusters; //total clusters ammount
     QList<QByteArray> *clusters_list; //clusters list with CLUSTER_SIZE bytes element size
+    QProcess *native_viewer,
+             *getWnd;
+    QWindow *nativeWindow;
+    QString program,
+            argument;
 
     int countClusters();    
     QList<unsigned int> parse_clusters_str(QString str);
@@ -48,12 +51,10 @@ private:
 
 private slots:
     void open_file();
-    void fit_size();
     void autoupdate();
-    void wnd_resize();
     void save_file();
     void save_file_as();
-    void update_view();
+    void update_view(int);
     void update_file();
     void resotre_file();
     void cluster_clicked(QListWidgetItem *);
@@ -65,7 +66,7 @@ private slots:
 
 signals:
     void sig_update_file();
-    void sig_update_view();
+    void sig_update_view(int);
 
 
 };
