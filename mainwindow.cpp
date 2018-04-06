@@ -26,7 +26,6 @@ MainWindow::MainWindow(QWidget *parent) :
     getWnd = new QProcess(this);
 
     QObject::connect(ui->actionAutoupdate,SIGNAL(triggered(bool)),this,SLOT(autoupdate()));
-    QObject::connect(ui->actionImage_fits_window,SIGNAL(triggered(bool)),this,SLOT(fit_size()));
     QObject::connect(ui->action_Open,SIGNAL(triggered(bool)),this,SLOT(open_file()));
     QObject::connect(ui->action_Save,SIGNAL(triggered(bool)),this,SLOT(save_file()));
     QObject::connect(ui->actionSave_file_as,SIGNAL(triggered(bool)),this,SLOT(save_file_as()));
@@ -34,7 +33,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->actionUpdate_image,SIGNAL(triggered(bool)),this,SLOT(update_file()));
     QObject::connect(ui->clusters_listview,SIGNAL(itemClicked(QListWidgetItem*)),this,SLOT(cluster_clicked(QListWidgetItem*)));
     QObject::connect(this,SIGNAL(sig_update_file()),this,SLOT(update_file()));
-    QObject::connect(this,SIGNAL(sig_update_view()),this,SLOT(update_view()));
+    QObject::connect(this,SIGNAL(sig_update_view(int)),this,SLOT(update_view(int)));
     QObject::connect(ui->action_Add_Cluster, SIGNAL(triggered(bool)), this, SLOT(add_cluster()));
     QObject::connect(ui->actionRe_move_Cluster,SIGNAL(triggered(bool)),this,SLOT(remove_cluster()));
     QObject::connect(getWnd,SIGNAL(finished(int)),this,SLOT(update_view(int)));
@@ -137,8 +136,6 @@ void MainWindow::open_file()
     itemSet->clear();
     itemList->clear();
     ui->clusters_listview->clear();
-//    //QImageReader img_rdr();
-//    *img = QPixmap::fromImage(QImage(*imgPath));    
 
     tmpPath = appPath + "/tmp";
 
@@ -233,9 +230,9 @@ void MainWindow::update_file()
     file.close();
 
     QString winPath = (tempFilePath).replace('/','\\');
-    //native_viewer->close();
+    native_viewer->close();
     native_viewer->start(program + " " + winPath);
-    //getWnd->start("getWnd.exe");
+    getWnd->start("getWnd.exe");
 }
 
 void MainWindow::resotre_file()
@@ -252,9 +249,9 @@ void MainWindow::resotre_file()
     ui->clusters_listview->clear();
 
     QString winPath = (tempFilePath).replace('/','\\');
-    //native_viewer->close();
+    native_viewer->close();
     native_viewer->start(program + " " + winPath);
-    //getWnd->start("getWnd.exe");
+    getWnd->start("getWnd.exe");
 
 }
 
