@@ -65,14 +65,6 @@ int MainWindow::countClusters()
         return -1;
     }
 
-    clusters_list = new QList<QByteArray>;
-
-        while (!file.atEnd())
-        {
-            QByteArray cluster = file.read(CLUSTER_SIZE);
-            clusters_list->push_back(cluster);
-        }
-
     file.close();
 
     return fileClusters;
@@ -377,3 +369,142 @@ void MainWindow::add_to_list(QString &str)
     }
 
 }
+
+
+
+//НОВОЕ
+int MainWindow::check_cluster(QByteArray &cluster, QList<QByteArray> *signatures_list) {
+    int result; //результат
+    int n; // число вхождений
+    // считываем по одной сигнатуре и ищем ее в кластере
+        n = 0;
+        int current_result = 0;
+        #pragma omp for
+        for (int i = 0; i < signatures_list->size(); i++) {
+            for (int j = 0; j < cluster.size() - signatures_list->at(i).size(); j++) {
+                int p = j;
+                n = n + current_result;
+                current_result = 1;
+                for (int k = 0; k < signatures_list->at(i).size(); k++) {
+                    if ((signatures_list->at(i).at(k) != cluster.at(p))&&(signatures_list->at(i).at(k) != '*')) {
+                        current_result = 0;
+                        break;
+                    }
+                    p = p + 1;
+                }
+            }
+        }
+
+    // если кол-во вхождений больше 19 или равно нулю, то кластер проверку не прошел
+    if ((n > 19) || (n == 0)) {
+        result = 0;
+    }
+    // в обратном случае - прошел
+     else result = 1;
+
+    return result;
+}
+
+
+QByteArray MainWindow::convert_to_bits(QByteArray &cluster) {
+    QByteArray bit_cluster;
+    for (int i = 0; i < cluster.size(); i++) {
+        switch (cluster.at(i)) {
+        case '0':
+            bit_cluster.push_back("0000");
+            break;
+        case '1':
+            bit_cluster.push_back("0001");
+            break;
+        case '2':
+            bit_cluster.push_back("0010");
+            break;
+        case '3':
+            bit_cluster.push_back("0011");
+            break;
+        case '4':
+            bit_cluster.push_back("0100");
+            break;
+        case '5':
+            bit_cluster.push_back("0101");
+            break;
+        case '6':
+            bit_cluster.push_back("0110");
+            break;
+        case '7':
+            bit_cluster.push_back("0111");
+            break;
+        case '8':
+            bit_cluster.push_back("1000");
+            break;
+        case '9':
+            bit_cluster.push_back("1001");
+            break;
+        case 'a':
+            bit_cluster.push_back("1010");
+            break;
+        case 'b':
+            bit_cluster.push_back("1011");
+            break;
+        case 'c':
+            bit_cluster.push_back("1100");
+            break;
+        case 'd':
+            //std::cout << "1101" << std::endl;
+            bit_cluster.push_back("1101");
+            break;
+        case 'e':
+            bit_cluster.push_back("1110");
+            break;
+        case 'f':
+            bit_cluster.push_back("1111");
+            break;
+        }
+    }
+    return bit_cluster;
+}
+
+void MainWindow::find_delClusters() {
+
+    int CLUSTER_SIZE = 4096;
+    QFile file(tempFilePath);
+    file.open(QIODevice::ReadOnly);
+//Убрать из функции count_clusters инициализацию clusters_list!!!Пусть происходит здесь
+    clusters_list = new QList<QByteArray>;
+        while (!file.atEnd())
+        {
+            QByteArray cluster = file.read(CLUSTER_SIZE);
+            clusters_list->push_back(cluster.toHex());
+        }
+    file.close();
+
+    clusters_list_bits = new QList<QByteArray>;
+
+    for (int i = 0; i < clusters_list->size(); i++) {
+        QByteArray new_cluster;
+        new_cluster = clusters_list->at(i);
+        new_cluster = convert_to_bits(new_cluster);
+        clusters_list_bits->push_back(new_cluster);
+    }
+    // открыли файл с сигнатурами
+    signatures_list = new QList<QByteArray>;
+        QFile sign_file("patterns.txt");
+        sign_file.open(QIODevice::ReadOnly);
+        while (!sign_file.atEnd()) {
+                  QByteArray signature = sign_file.readLine();
+                  // удаляем из сигнатуры пробел
+                  signature.remove(signature.size()-2, 2);
+                  signatures_list->push_back(signature);
+              }
+        sign_file.close();
+
+    delClusters = new QSet<unsigned int>;
+    for (int i = 0; i < clusters_list_bits->size(); i++){
+        QByteArray test;
+        test = clusters_list_bits->at(i);
+        if (check_cluster(test, signatures_list) == 0) {
+            delClusters->insert(i);
+        }
+    }
+}
+//
