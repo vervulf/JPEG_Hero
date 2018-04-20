@@ -39,6 +39,12 @@ private:
     QList<QListWidgetItem*> *itemList; // checkboxes in ListView
     int fileClusters; //total clusters ammount
     QList<QByteArray> *clusters_list; //clusters list with CLUSTER_SIZE bytes element size
+
+    //НОВОЕ
+    QList<QByteArray> *clusters_list_bits; //bits clusters list with CLUSTER_SIZE bytes element size
+    QList<QByteArray> *signatures_list; //list of signatures
+    //
+
     QProcess *native_viewer,
              *getWnd;
     QWindow *nativeWindow;
@@ -47,6 +53,11 @@ private:
 
     int countClusters();    
     QList<unsigned int> parse_clusters_str(QString str);
+
+    //НОВОЕ
+    int check_cluster(QByteArray&, QList<QByteArray> *);
+    QByteArray convert_to_bits(QByteArray&);
+    //
 
 
 private slots:
@@ -62,6 +73,10 @@ private slots:
     void remove_cluster();
     void add_to_list(QString&);
     void remove_from_list(QString&);
+
+    //НОВОЕ
+    void find_delClusters();
+    //
 
 
 signals:
