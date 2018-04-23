@@ -37,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->action_Add_Cluster, SIGNAL(triggered(bool)), this, SLOT(add_cluster()));
     QObject::connect(ui->actionRe_move_Cluster,SIGNAL(triggered(bool)),this,SLOT(remove_cluster()));
     QObject::connect(getWnd,SIGNAL(finished(int)),this,SLOT(update_view(int)));
+    QObject::connect(ui->actionApply,SIGNAL(triggered(bool)),this,SLOT(find_delClusters()));
 
 }
 
@@ -64,7 +65,13 @@ int MainWindow::countClusters()
         ui->statusBar->showMessage("Failed to load file.");
         return -1;
     }
+    clusters_list_orig = new QList<QByteArray>;
 
+            while (!file.atEnd())
+            {
+                QByteArray cluster = file.read(CLUSTER_SIZE);
+                clusters_list_orig->push_back(cluster);
+            }
     file.close();
 
     return fileClusters;
@@ -214,9 +221,9 @@ void MainWindow::update_file()
     if (!file.open(QIODevice::WriteOnly))
         return;
 
-    for(int i=0; i<clusters_list->size(); ++i)
+    for(int i=0; i<clusters_list_orig->size(); ++i)
     {   if(!delClusters->contains(i))
-            file.write(clusters_list->at(i));
+            file.write(clusters_list_orig->at(i));
     }
 
     file.close();
@@ -498,13 +505,22 @@ void MainWindow::find_delClusters() {
               }
         sign_file.close();
 
-    delClusters = new QSet<unsigned int>;
+    //delClusters = new QSet<unsigned int>; инициализация производится ОДИН!!!!! раз в конструкторе класса.
+    //дальше работа идет с существующим объектом, если новая картинка, то просто удаляются все его эл-ты, НО не объект.
+
     for (int i = 0; i < clusters_list_bits->size(); i++){
         QByteArray test;
         test = clusters_list_bits->at(i);
         if (check_cluster(test, signatures_list) == 0) {
             delClusters->insert(i);
         }
+    }
+
+    QString update_all_cltrs_view = "*";
+    this->add_to_list(update_all_cltrs_view);
+    if (img_autoupdate)
+    {
+        emit sig_update_file();
     }
 }
 //
