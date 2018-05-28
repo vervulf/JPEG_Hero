@@ -38,7 +38,7 @@ private:
                         *delClusters; // numbers of cluster to remove (disable)
     QList<QListWidgetItem*> *itemList; // checkboxes in ListView
     int fileClusters; //total clusters ammount
-    QList<QByteArray> *clusters_list; //clusters list with CLUSTER_SIZE bytes element size
+    QList<QByteArray> *clusters_list, *clusters_list_orig; //clusters list with CLUSTER_SIZE bytes element size
 
     //НОВОЕ
     QList<QByteArray> *clusters_list_bits; //bits clusters list with CLUSTER_SIZE bytes element size

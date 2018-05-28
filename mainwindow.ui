@@ -99,7 +99,6 @@
     <property name="title">
      <string>&amp;Patterns</string>
     </property>
-    <addaction name="actionLoad"/>
     <addaction name="actionApply"/>
    </widget>
    <addaction name="menu_File"/>

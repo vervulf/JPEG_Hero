@@ -37,6 +37,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->action_Add_Cluster, SIGNAL(triggered(bool)), this, SLOT(add_cluster()));
     QObject::connect(ui->actionRe_move_Cluster,SIGNAL(triggered(bool)),this,SLOT(remove_cluster()));
     QObject::connect(getWnd,SIGNAL(finished(int)),this,SLOT(update_view(int)));
+    QObject::connect(ui->actionApply,SIGNAL(triggered(bool)),this,SLOT(find_delClusters()));
 
 }
 
@@ -64,7 +65,13 @@ int MainWindow::countClusters()
         ui->statusBar->showMessage("Failed to load file.");
         return -1;
     }
+    clusters_list_orig = new QList<QByteArray>;
 
+            while (!file.atEnd())
+            {
+                QByteArray cluster = file.read(CLUSTER_SIZE);
+                clusters_list_orig->push_back(cluster);
+            }
     file.close();
 
     return fileClusters;
@@ -214,9 +221,9 @@ void MainWindow::update_file()
     if (!file.open(QIODevice::WriteOnly))
         return;
 
-    for(int i=0; i<clusters_list->size(); ++i)
+    for(int i=0; i<clusters_list_orig->size(); ++i)
     {   if(!delClusters->contains(i))
-            file.write(clusters_list->at(i));
+            file.write(clusters_list_orig->at(i));
     }
 
     file.close();
@@ -379,7 +386,7 @@ int MainWindow::check_cluster(QByteArray &cluster, QList<QByteArray> *signatures
     // считываем по одной сигнатуре и ищем ее в кластере
         n = 0;
         int current_result = 0;
-        #pragma omp for
+        //#pragma omp for
         for (int i = 0; i < signatures_list->size(); i++) {
             for (int j = 0; j < cluster.size() - signatures_list->at(i).size(); j++) {
                 int p = j;
@@ -401,6 +408,7 @@ int MainWindow::check_cluster(QByteArray &cluster, QList<QByteArray> *signatures
     }
     // в обратном случае - прошел
      else result = 1;
+    printf("\n%d",n);
 
     return result;
 }
@@ -469,7 +477,7 @@ void MainWindow::find_delClusters() {
     int CLUSTER_SIZE = 4096;
     QFile file(tempFilePath);
     file.open(QIODevice::ReadOnly);
-//Убрать из функции count_clusters инициализацию clusters_list!!!Пусть происходит здесь
+
     clusters_list = new QList<QByteArray>;
         while (!file.atEnd())
         {
@@ -486,25 +494,32 @@ void MainWindow::find_delClusters() {
         new_cluster = convert_to_bits(new_cluster);
         clusters_list_bits->push_back(new_cluster);
     }
+    printf("Hello");
     // открыли файл с сигнатурами
     signatures_list = new QList<QByteArray>;
-        QFile sign_file("patterns.txt");
+        QFile sign_file(":/files/patterns.txt");
         sign_file.open(QIODevice::ReadOnly);
         while (!sign_file.atEnd()) {
                   QByteArray signature = sign_file.readLine();
                   // удаляем из сигнатуры пробел
-                  signature.remove(signature.size()-2, 2);
+                  signature.remove(signature.size()-1, 1);
                   signatures_list->push_back(signature);
               }
         sign_file.close();
 
-    delClusters = new QSet<unsigned int>;
     for (int i = 0; i < clusters_list_bits->size(); i++){
         QByteArray test;
         test = clusters_list_bits->at(i);
         if (check_cluster(test, signatures_list) == 0) {
             delClusters->insert(i);
         }
+    }
+
+    QString update_all_cltrs_view = "*";
+    this->add_to_list(update_all_cltrs_view);
+    if (img_autoupdate)
+    {
+        emit sig_update_file();
     }
 }
 //
