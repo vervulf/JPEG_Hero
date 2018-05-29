@@ -3,7 +3,6 @@
 
 #include <QMainWindow>
 #include <QLabel>
-#include <QPixmap>
 #include <QListView>
 #include <QDir>
 #include <QFile>
@@ -14,7 +13,6 @@
 #include <QSize>
 #include <QDesktopWidget>
 #include <QMessageBox>
-#include <QLabel>
 #include <QListWidgetItem>
 #include <QList>
 #include <QQueue>
@@ -23,5 +21,9 @@
 #include <QByteArray>
 #include <QByteArrayList>
 #include <QRegExp>
+#include <QProcess>
+#include <QWindow>
+#include <windows.h>
+#include <QDebug>
 
 #endif // INCLUDE_H

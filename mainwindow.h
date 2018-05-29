@@ -29,31 +29,43 @@ private:
             tempFilePath;
     QString file_types;
     Ui::MainWindow *ui;
-    QPixmap *img;
     QString *imgPath; //current img path
-    QLabel *imgLabel; //ImgView
-    bool img_fits_wnd,
-         img_autoupdate;
+    QWidget *imgView; //ImgView
+    bool img_autoupdate;
     int LISTVIEW_WIDTH;
     QLabel *status_lbl;
     QSet<unsigned int>  *itemSet,
                         *delClusters; // numbers of cluster to remove (disable)
     QList<QListWidgetItem*> *itemList; // checkboxes in ListView
     int fileClusters; //total clusters ammount
-    QList<QByteArray> *clusters_list; //clusters list with CLUSTER_SIZE bytes element size
+    QList<QByteArray> *clusters_list, *clusters_list_orig; //clusters list with CLUSTER_SIZE bytes element size
+
+    //НОВОЕ
+    QList<QByteArray> *clusters_list_bits; //bits clusters list with CLUSTER_SIZE bytes element size
+    QList<QByteArray> *signatures_list; //list of signatures
+    //
+
+    QProcess *native_viewer,
+             *getWnd;
+    QWindow *nativeWindow;
+    QString program,
+            argument;
 
     int countClusters();    
     QList<unsigned int> parse_clusters_str(QString str);
 
+    //НОВОЕ
+    int check_cluster(QByteArray&, QList<QByteArray> *);
+    QByteArray convert_to_bits(QByteArray&);
+    //
+
 
 private slots:
     void open_file();
-    void fit_size();
     void autoupdate();
-    void wnd_resize();
     void save_file();
     void save_file_as();
-    void update_view();
+    void update_view(int);
     void update_file();
     void resotre_file();
     void cluster_clicked(QListWidgetItem *);
@@ -62,10 +74,14 @@ private slots:
     void add_to_list(QString&);
     void remove_from_list(QString&);
 
+    //НОВОЕ
+    void find_delClusters();
+    //
+
 
 signals:
     void sig_update_file();
-    void sig_update_view();
+    void sig_update_view(int);
 
 
 };

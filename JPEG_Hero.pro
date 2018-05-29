@@ -22,3 +22,6 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui \
     clusterdlg.ui
+
+RESOURCES += \
+    res.qrc

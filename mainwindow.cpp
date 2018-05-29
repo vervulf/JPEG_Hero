@@ -5,40 +5,27 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    img(new QPixmap()),
     imgPath(new QString("/")),
-    imgLabel(new QLabel()),
-    img_fits_wnd(true),
-    img_autoupdate(false),
+    img_autoupdate(true),
     LISTVIEW_WIDTH(175),
     file_types(tr("JPEG File (*.jpg *.jpeg)")),
     itemSet(new QSet<unsigned int>),
     delClusters(new QSet<unsigned int>),
     itemList(new QList<QListWidgetItem*>),
     fileClusters(-1),
-    status_lbl(new QLabel())
+    status_lbl(new QLabel()),
+    program("rundll32.exe C:\\WINDOWS\\System32\\shimgvw.dll,ImageView_Fullscreen ")
 {
     ui->setupUi(this);
     setWindowTitle("JPEG Hero");
     ui->statusBar->addWidget(status_lbl);
     status_lbl->setText("No File Opened");
     ui->actionAutoupdate->setChecked(img_autoupdate);
-    ui->actionImage_fits_window->setChecked(img_fits_wnd);
-    ui->scrollArea->setWidget(imgLabel);
 
-    QSize *wndSize = new QSize();
-    *wndSize = this->size();
-
-    int imgW = wndSize->width()-LISTVIEW_WIDTH,
-        imgH = wndSize->height()-77, // 77 = bottom status bar height
-        clustW = LISTVIEW_WIDTH,
-        clustH = wndSize->height()-77;
-
-    ui->clusters_listview->setGeometry(0,0,clustW,clustH);
-    imgLabel->setGeometry(LISTVIEW_WIDTH,0,imgW,imgH);
+    native_viewer = new QProcess(this);
+    getWnd = new QProcess(this);
 
     QObject::connect(ui->actionAutoupdate,SIGNAL(triggered(bool)),this,SLOT(autoupdate()));
-    QObject::connect(ui->actionImage_fits_window,SIGNAL(triggered(bool)),this,SLOT(fit_size()));
     QObject::connect(ui->action_Open,SIGNAL(triggered(bool)),this,SLOT(open_file()));
     QObject::connect(ui->action_Save,SIGNAL(triggered(bool)),this,SLOT(save_file()));
     QObject::connect(ui->actionSave_file_as,SIGNAL(triggered(bool)),this,SLOT(save_file_as()));
@@ -46,9 +33,11 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->actionUpdate_image,SIGNAL(triggered(bool)),this,SLOT(update_file()));
     QObject::connect(ui->clusters_listview,SIGNAL(itemClicked(QListWidgetItem*)),this,SLOT(cluster_clicked(QListWidgetItem*)));
     QObject::connect(this,SIGNAL(sig_update_file()),this,SLOT(update_file()));
-    QObject::connect(this,SIGNAL(sig_update_view()),this,SLOT(update_view()));
+    QObject::connect(this,SIGNAL(sig_update_view(int)),this,SLOT(update_view(int)));
     QObject::connect(ui->action_Add_Cluster, SIGNAL(triggered(bool)), this, SLOT(add_cluster()));
     QObject::connect(ui->actionRe_move_Cluster,SIGNAL(triggered(bool)),this,SLOT(remove_cluster()));
+    QObject::connect(getWnd,SIGNAL(finished(int)),this,SLOT(update_view(int)));
+    QObject::connect(ui->actionApply,SIGNAL(triggered(bool)),this,SLOT(find_delClusters()));
 
 }
 
@@ -59,7 +48,7 @@ MainWindow::~MainWindow()
     if(QFile(backupPath).exists())
         QFile(backupPath).remove();
 
-    delete ui,img,imgPath,imgLabel;
+    delete ui,imgPath,imgView;
 }
 
 int MainWindow::countClusters()
@@ -76,15 +65,13 @@ int MainWindow::countClusters()
         ui->statusBar->showMessage("Failed to load file.");
         return -1;
     }
+    clusters_list_orig = new QList<QByteArray>;
 
-    clusters_list = new QList<QByteArray>;
-
-        while (!file.atEnd())
-        {
-            QByteArray cluster = file.read(CLUSTER_SIZE);
-            clusters_list->push_back(cluster);
-        }
-
+            while (!file.atEnd())
+            {
+                QByteArray cluster = file.read(CLUSTER_SIZE);
+                clusters_list_orig->push_back(cluster);
+            }
     file.close();
 
     return fileClusters;
@@ -143,21 +130,11 @@ void MainWindow::open_file()
         return;
     }
 
-    delete img;
-    img = new QPixmap(*imgPath);
-    if (img_fits_wnd)
-    {
-        int w = ui->scrollArea->width(),
-            h = ui->scrollArea->height();
-        imgLabel->setPixmap(img->scaled(w,h,Qt::KeepAspectRatio));
-    }
-    else
-    {
-        int w = img->width(),
-            h = img->height();
-        imgLabel->resize(w,h);
-        imgLabel->setPixmap(*img);
-    }
+    qDeleteAll(itemList->begin(),itemList->end());
+    delClusters->clear();
+    itemSet->clear();
+    itemList->clear();
+    ui->clusters_listview->clear();
 
     tmpPath = appPath + "/tmp";
 
@@ -177,43 +154,16 @@ void MainWindow::open_file()
     result = QFile::copy(*imgPath, tempFilePath);
     result = QFile::copy(*imgPath, backupPath);
     this->countClusters();
-}
 
-void MainWindow::fit_size()
-{
-    img_fits_wnd = ui->actionImage_fits_window->isChecked();
-
-    if (img_fits_wnd)
-    {
-        int w = ui->scrollArea->width(),
-            h = ui->scrollArea->height();
-        imgLabel->setPixmap(img->scaled(w,h,Qt::KeepAspectRatio));
-    }
-    else
-    {
-        int w = img->width(),
-            h = img->height();
-        imgLabel->resize(w,h);
-        imgLabel->setPixmap(*img);
-    }
+    QString winPath = (tempFilePath).replace('/','\\');
+    native_viewer->close();
+    native_viewer->start(program + " " + winPath);
+    getWnd->start("getWnd.exe");
 }
 
 void MainWindow::autoupdate()
 {
     img_autoupdate = ui->actionAutoupdate->isChecked();
-}
-
-void MainWindow::wnd_resize()
-{
-    QSize *wndSize = new QSize();
-    *wndSize = this->size();
-
-    int imgW = wndSize->width()-LISTVIEW_WIDTH,
-        imgH = wndSize->height()-77, // 77 = bottom status bar height
-        clustW = LISTVIEW_WIDTH,
-        clustH = wndSize->height()-77;
-
-    imgLabel->setGeometry(LISTVIEW_WIDTH,0,imgW,imgH);
 }
 
 void MainWindow::save_file()
@@ -236,25 +186,29 @@ void MainWindow::save_file_as()
 
 }
 
-void MainWindow::update_view()
+void MainWindow::update_view(int exitStatus)
 {
+    if(exitStatus>0)
+        return;
 
-    delete img;
-    img = new QPixmap(tempFilePath);
+    long wndId;
+    QFile inputFile("viewer.wnd");
+    if (inputFile.open(QIODevice::ReadOnly))
+    {
+       QTextStream in(&inputFile);
+       while (!in.atEnd())
+       {
+          QString line = in.readLine();
+          line.remove(0,2);
+          wndId = line.toInt(nullptr,16);
+       }
+       inputFile.close();
+    }
 
-    if (img_fits_wnd)
-    {
-        int w = ui->scrollArea->width(),
-            h = ui->scrollArea->height();
-        imgLabel->setPixmap(img->scaled(w,h,Qt::KeepAspectRatio));
-    }
-    else
-    {
-        int w = img->width(),
-            h = img->height();
-        imgLabel->resize(w,h);
-        imgLabel->setPixmap(*img);
-    }
+    nativeWindow = QWindow::fromWinId(wndId);
+    nativeWindow->setFlags(Qt::FramelessWindowHint);
+    imgView = QWidget::createWindowContainer(nativeWindow,this);
+    ui->scrollArea->setWidget(imgView);
 }
 
 void MainWindow::update_file()
@@ -267,14 +221,17 @@ void MainWindow::update_file()
     if (!file.open(QIODevice::WriteOnly))
         return;
 
-    for(int i=0; i<clusters_list->size(); ++i)
+    for(int i=0; i<clusters_list_orig->size(); ++i)
     {   if(!delClusters->contains(i))
-            file.write(clusters_list->at(i));
+            file.write(clusters_list_orig->at(i));
     }
 
     file.close();
 
-    emit sig_update_view();
+    QString winPath = (tempFilePath).replace('/','\\');
+    native_viewer->close();
+    native_viewer->start(program + " " + winPath);
+    getWnd->start("getWnd.exe");
 }
 
 void MainWindow::resotre_file()
@@ -289,7 +246,11 @@ void MainWindow::resotre_file()
     itemSet->clear();
     itemList->clear();
     ui->clusters_listview->clear();
-    emit this->update_view();
+
+    QString winPath = (tempFilePath).replace('/','\\');
+    native_viewer->close();
+    native_viewer->start(program + " " + winPath);
+    getWnd->start("getWnd.exe");
 
 }
 
@@ -415,3 +376,150 @@ void MainWindow::add_to_list(QString &str)
     }
 
 }
+
+
+
+//НОВОЕ
+int MainWindow::check_cluster(QByteArray &cluster, QList<QByteArray> *signatures_list) {
+    int result; //результат
+    int n; // число вхождений
+    // считываем по одной сигнатуре и ищем ее в кластере
+        n = 0;
+        int current_result = 0;
+        //#pragma omp for
+        for (int i = 0; i < signatures_list->size(); i++) {
+            for (int j = 0; j < cluster.size() - signatures_list->at(i).size(); j++) {
+                int p = j;
+                n = n + current_result;
+                current_result = 1;
+                for (int k = 0; k < signatures_list->at(i).size(); k++) {
+                    if ((signatures_list->at(i).at(k) != cluster.at(p))&&(signatures_list->at(i).at(k) != '*')) {
+                        current_result = 0;
+                        break;
+                    }
+                    p = p + 1;
+                }
+            }
+        }
+
+    // если кол-во вхождений больше 19 или равно нулю, то кластер проверку не прошел
+    if ((n > 19) || (n == 0)) {
+        result = 0;
+    }
+    // в обратном случае - прошел
+     else result = 1;
+    printf("\n%d",n);
+
+    return result;
+}
+
+
+QByteArray MainWindow::convert_to_bits(QByteArray &cluster) {
+    QByteArray bit_cluster;
+    for (int i = 0; i < cluster.size(); i++) {
+        switch (cluster.at(i)) {
+        case '0':
+            bit_cluster.push_back("0000");
+            break;
+        case '1':
+            bit_cluster.push_back("0001");
+            break;
+        case '2':
+            bit_cluster.push_back("0010");
+            break;
+        case '3':
+            bit_cluster.push_back("0011");
+            break;
+        case '4':
+            bit_cluster.push_back("0100");
+            break;
+        case '5':
+            bit_cluster.push_back("0101");
+            break;
+        case '6':
+            bit_cluster.push_back("0110");
+            break;
+        case '7':
+            bit_cluster.push_back("0111");
+            break;
+        case '8':
+            bit_cluster.push_back("1000");
+            break;
+        case '9':
+            bit_cluster.push_back("1001");
+            break;
+        case 'a':
+            bit_cluster.push_back("1010");
+            break;
+        case 'b':
+            bit_cluster.push_back("1011");
+            break;
+        case 'c':
+            bit_cluster.push_back("1100");
+            break;
+        case 'd':
+            //std::cout << "1101" << std::endl;
+            bit_cluster.push_back("1101");
+            break;
+        case 'e':
+            bit_cluster.push_back("1110");
+            break;
+        case 'f':
+            bit_cluster.push_back("1111");
+            break;
+        }
+    }
+    return bit_cluster;
+}
+
+void MainWindow::find_delClusters() {
+
+    int CLUSTER_SIZE = 4096;
+    QFile file(tempFilePath);
+    file.open(QIODevice::ReadOnly);
+
+    clusters_list = new QList<QByteArray>;
+        while (!file.atEnd())
+        {
+            QByteArray cluster = file.read(CLUSTER_SIZE);
+            clusters_list->push_back(cluster.toHex());
+        }
+    file.close();
+
+    clusters_list_bits = new QList<QByteArray>;
+
+    for (int i = 0; i < clusters_list->size(); i++) {
+        QByteArray new_cluster;
+        new_cluster = clusters_list->at(i);
+        new_cluster = convert_to_bits(new_cluster);
+        clusters_list_bits->push_back(new_cluster);
+    }
+    printf("Hello");
+    // открыли файл с сигнатурами
+    signatures_list = new QList<QByteArray>;
+        QFile sign_file(":/files/patterns.txt");
+        sign_file.open(QIODevice::ReadOnly);
+        while (!sign_file.atEnd()) {
+                  QByteArray signature = sign_file.readLine();
+                  // удаляем из сигнатуры пробел
+                  signature.remove(signature.size()-1, 1);
+                  signatures_list->push_back(signature);
+              }
+        sign_file.close();
+
+    for (int i = 0; i < clusters_list_bits->size(); i++){
+        QByteArray test;
+        test = clusters_list_bits->at(i);
+        if (check_cluster(test, signatures_list) == 0) {
+            delClusters->insert(i);
+        }
+    }
+
+    QString update_all_cltrs_view = "*";
+    this->add_to_list(update_all_cltrs_view);
+    if (img_autoupdate)
+    {
+        emit sig_update_file();
+    }
+}
+//
