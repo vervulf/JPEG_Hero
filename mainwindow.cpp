@@ -386,7 +386,7 @@ int MainWindow::check_cluster(QByteArray &cluster, QList<QByteArray> *signatures
     // считываем по одной сигнатуре и ищем ее в кластере
         n = 0;
         int current_result = 0;
-        //#pragma omp for
+
         for (int i = 0; i < signatures_list->size(); i++) {
             for (int j = 0; j < cluster.size() - signatures_list->at(i).size(); j++) {
                 int p = j;
@@ -458,7 +458,6 @@ QByteArray MainWindow::convert_to_bits(QByteArray &cluster) {
             bit_cluster.push_back("1100");
             break;
         case 'd':
-            //std::cout << "1101" << std::endl;
             bit_cluster.push_back("1101");
             break;
         case 'e':
@@ -488,6 +487,7 @@ void MainWindow::find_delClusters() {
 
     clusters_list_bits = new QList<QByteArray>;
 
+
     for (int i = 0; i < clusters_list->size(); i++) {
         QByteArray new_cluster;
         new_cluster = clusters_list->at(i);
@@ -507,6 +507,7 @@ void MainWindow::find_delClusters() {
               }
         sign_file.close();
 
+    #pragma omp parallel for
     for (int i = 0; i < clusters_list_bits->size(); i++){
         QByteArray test;
         test = clusters_list_bits->at(i);
