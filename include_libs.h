@@ -25,5 +25,6 @@
 #include <QWindow>
 #include <windows.h>
 #include <QDebug>
+#include <omp.h>
 
 #endif // INCLUDE_H

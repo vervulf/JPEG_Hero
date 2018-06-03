@@ -386,7 +386,7 @@ int MainWindow::check_cluster(QByteArray &cluster, QList<QByteArray> *signatures
     // считываем по одной сигнатуре и ищем ее в кластере
         n = 0;
         int current_result = 0;
-        #pragma omp for
+
         for (int i = 0; i < signatures_list->size(); i++) {
             for (int j = 0; j < cluster.size() - signatures_list->at(i).size(); j++) {
                 int p = j;
@@ -408,6 +408,7 @@ int MainWindow::check_cluster(QByteArray &cluster, QList<QByteArray> *signatures
     }
     // в обратном случае - прошел
      else result = 1;
+    printf("\n%d",n);
 
     return result;
 }
@@ -457,7 +458,6 @@ QByteArray MainWindow::convert_to_bits(QByteArray &cluster) {
             bit_cluster.push_back("1100");
             break;
         case 'd':
-            //std::cout << "1101" << std::endl;
             bit_cluster.push_back("1101");
             break;
         case 'e':
@@ -476,7 +476,7 @@ void MainWindow::find_delClusters() {
     int CLUSTER_SIZE = 4096;
     QFile file(tempFilePath);
     file.open(QIODevice::ReadOnly);
-//Убрать из функции count_clusters инициализацию clusters_list!!!Пусть происходит здесь
+
     clusters_list = new QList<QByteArray>;
         while (!file.atEnd())
         {
@@ -487,27 +487,33 @@ void MainWindow::find_delClusters() {
 
     clusters_list_bits = new QList<QByteArray>;
 
+
     for (int i = 0; i < clusters_list->size(); i++) {
         QByteArray new_cluster;
         new_cluster = clusters_list->at(i);
         new_cluster = convert_to_bits(new_cluster);
         clusters_list_bits->push_back(new_cluster);
     }
+    printf("Hello");
     // открыли файл с сигнатурами
     signatures_list = new QList<QByteArray>;
-        QFile sign_file("patterns.txt");
+        QFile sign_file(":/files/patterns.txt");
         sign_file.open(QIODevice::ReadOnly);
         while (!sign_file.atEnd()) {
                   QByteArray signature = sign_file.readLine();
                   // удаляем из сигнатуры пробел
-                  signature.remove(signature.size()-2, 2);
+                  signature.remove(signature.size()-1, 1);
                   signatures_list->push_back(signature);
               }
         sign_file.close();
 
+<<<<<<< HEAD
     //delClusters = new QSet<unsigned int>; инициализация производится ОДИН!!!!! раз в конструкторе класса.
     //дальше работа идет с существующим объектом, если новая картинка, то просто удаляются все его эл-ты, НО не объект.
 
+=======
+    #pragma omp parallel for
+>>>>>>> 94dad677aba2cdc029d86b6d3dca27c9a62c2874
     for (int i = 0; i < clusters_list_bits->size(); i++){
         QByteArray test;
         test = clusters_list_bits->at(i);

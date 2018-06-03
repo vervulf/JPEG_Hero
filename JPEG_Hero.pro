@@ -11,6 +11,9 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = JPEG_Hero
 TEMPLATE = app
 
+QMAKE_LIBS+=-static -lgomp -lpthread
+QMAKE_CXXFLAGS+=-fopenmp
+QMAKE_LFLAGS += -fopenmp
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -22,3 +25,6 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui \
     clusterdlg.ui
+
+RESOURCES += \
+    res.qrc
