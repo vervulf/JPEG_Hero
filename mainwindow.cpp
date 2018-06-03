@@ -106,14 +106,16 @@ QList<unsigned int> MainWindow::parse_clusters_str(QString str)
                last = clusters_range[0].toInt();
            }
            for(int i = first; i<= last; ++i)
-               clusters.append(i);
+               if (i<fileClusters)
+                clusters.append(i);
        }
        else
            if(!re.exactMatch(substr) || substr == "")
                valid_num = false;
            if(!valid_num)
                continue;
-           clusters.append(substr.toInt());
+           if (substr.toInt()<fileClusters)
+            clusters.append(substr.toInt());
     }
 
     return clusters;
@@ -302,7 +304,7 @@ void MainWindow::remove_from_list(QString &str)
     QList<unsigned int> clusters;
     if(str == "*")
     {
-        for(int i=0; i <= fileClusters; ++i)
+        for(int i=0; i < fileClusters; ++i)
             clusters.append(i);
     }
     else
@@ -346,7 +348,7 @@ void MainWindow::add_to_list(QString &str)
     QList<unsigned int> clusters;
     if(str == "*")
     {
-        for(int i=0; i <= fileClusters; ++i)
+        for(int i=0; i < fileClusters; ++i)
             clusters.append(i);
     }
     else
@@ -408,7 +410,6 @@ int MainWindow::check_cluster(QByteArray &cluster, QList<QByteArray> *signatures
     }
     // в обратном случае - прошел
      else result = 1;
-    printf("\n%d",n);
 
     return result;
 }
@@ -507,13 +508,10 @@ void MainWindow::find_delClusters() {
               }
         sign_file.close();
 
-<<<<<<< HEAD
     //delClusters = new QSet<unsigned int>; инициализация производится ОДИН!!!!! раз в конструкторе класса.
     //дальше работа идет с существующим объектом, если новая картинка, то просто удаляются все его эл-ты, НО не объект.
 
-=======
     #pragma omp parallel for
->>>>>>> 94dad677aba2cdc029d86b6d3dca27c9a62c2874
     for (int i = 0; i < clusters_list_bits->size(); i++){
         QByteArray test;
         test = clusters_list_bits->at(i);
